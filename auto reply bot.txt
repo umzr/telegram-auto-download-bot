@@ -1,0 +1,136 @@
+function debugCode(){
+  debug();
+}
+ 
+function doGet(e){
+  return HtmlService.createHtmlOutput("Hello World!! No, this link should be hidden!!!");
+   
+ //  return HtmlService.createHtmlOutputFromFile('Index');
+}
+ 
+ 
+function doPost(e){
+  var body = JSON.parse(e.postData.contents);
+   
+  var payload = preparePayload(body);
+   
+  var payloads;
+ 
+  if (Array.isArray(payload)){
+    payloads = payload;
+  } else {
+    payloads = [payload]
+  }
+ 
+  for (var i = 0; i < payloads.length; i++){
+    payload = payloads[i];
+    if (payload){
+      var res = postTelegram(payload);
+    }
+  }
+ 
+ 
+}
+ 
+function postTelegram(payload) {
+  var data = {
+    'contentType': 'application/json',
+    "method": "post",
+    "payload": JSON.stringify(payload)
+  }
+  var response = UrlFetchApp.fetch("https://api.telegram.org/bot(api)", data);
+  var res = JSON.parse(response);
+  return res;
+}
+
+function escapeMarkDown(toEscapeMsg) {
+  var escapedMsg = toEscapeMsg
+  .replace(/_/g, "\\_")
+  .replace(/\*/g, "\\*")
+  .replace(/\[/g, "\\[")
+  .replace(/`/g, "\\`");
+    return escapedMsg;
+ 
+}
+ 
+ 
+function getMarkDownUserUrl(userName, userId) {
+  return "[" + userName + "](tg://user?id=" + userId + ")";
+}
+ 
+
+ 
+function preparePayload(body){
+  var payload;
+   
+  if (body.message) {
+    body.message.chat.id = body.message.chat.id + '';
+  }
+   
+  if (body.callback_query) {
+     payload = {
+        "method": "sendMessage",
+        "chat_id": body.callback_query.message.chat.id,
+        "text": "callback ",
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": true,
+      };
+       
+       
+     
+      return payload;
+   
+  }
+   
+
+  function file(body,fileid){
+  
+    payload = {
+      "method": "sendDocument",
+       "chat_id": body.message.chat.id,
+   "reply_to_message_id" : body.message.message_id,
+      "document" : fileid ,
+        "caption" : body.message.from.first_name + " @"+body.message.from.username+"testing 18/4/2020 @chinupkpkdog"
+      } 
+  }
+
+   
+  if (body.message.tet){
+   
+
+   
+      var origParas = body.message.text.trim().split(" ");
+      origParas = origParas.filter(function(origPara){
+        if (origPara){
+          return true;
+        }
+      });
+       
+      body.message.text = body.message.text.toLowerCase();
+      body.message.text = body.message.text.replace(/@your bot name/g, '');
+       
+      var paras = body.message.text.trim().split(" ");
+      // remove empty strings
+      paras = paras.filter(function(para){
+        if (para){
+          return true;
+        }
+      });
+
+  }
+  else if (body.message.text=="/help@your bot name"){
+     payload = {
+      "method": "sendMessage",
+      "chat_id": body.message.chat.id,
+       "text": "hi "+ body.message.from.first_name+ " your message below "
+     }
+ } 
+  else if (body.message.text=="your message"){file(body,"file id")} // keep loop
+
+
+  
+  
+  
+  return payload
+  
+}
